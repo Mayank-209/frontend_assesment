@@ -40,9 +40,9 @@ function App() {
 
   useEffect(() => {
     if (authUser) {
-      const socketio = io("http://localhost:5000", {
+      const socketio = io("http://34.44.91.202:5000", {
         query: {
-          userId: authUser._id,
+          userId: authUser.user._id,
         },
       });
       dispatch(setSocket(socketio));

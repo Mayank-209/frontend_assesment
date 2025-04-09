@@ -8,35 +8,47 @@ import useFetchDealBetweenUsers from "../util/getDeal";
 import useGetRealTimeDeal from "../hooks/useGetRealTimeDeal";
 
 function MessageContainer() {
+  const baseuri = process.env.REACT_APP_BASE_URL;
   const { selectedUser, authUser } = useSelector((store) => store.user);
   const { currentDeal: deal } = useSelector((store) => store.deal);
   const dispatch = useDispatch();
 
   const [showModal, setShowModal] = useState(false);
   const [newAmount, setNewAmount] = useState("");
-  const [newTitle, setNewTitle] = useState("");  // Added title state
-  const [newDescription, setNewDescription] = useState("");  // Added description state
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
   const [refreshTrigger, setRefreshTrigger] = useState(false);
 
   // Custom hooks
-  useFetchDealBetweenUsers(authUser?._id, selectedUser?._id, refreshTrigger);
+  useFetchDealBetweenUsers(authUser?.user?._id, selectedUser?._id, refreshTrigger);
   useGetRealTimeDeal();
 
-  const isBuyer = authUser?.role === "buyer";
-  const isSeller = authUser?.role === "seller";
+  const isBuyer = authUser?.user?.role === "buyer";
+  const isSeller = authUser?.user?.role === "seller";
 
+  const token = localStorage.getItem("token")
+
+  
+  
   const handleCreateDeal = async () => {
+    if (!token) return console.error("No auth token found");
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/v1/deal/create",
+        `${baseuri}/deal/create`,
         {
-          title: newTitle,  // Sending title
-          description: newDescription,  // Sending description
+          title: newTitle,
+          description: newDescription,
           price: newAmount,
           sellerId: selectedUser._id,
         },
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+      console.log("succ",res);
+      
       setShowModal(false);
       setRefreshTrigger((prev) => !prev);
     } catch (error) {
@@ -45,15 +57,20 @@ function MessageContainer() {
   };
 
   const handleUpdateDeal = async () => {
+    if (!token) return console.error("No auth token found");
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/v1/deal/${deal._id}/negotiate`,
+        `${baseuri}/deal/${deal._id}/negotiate`,
         {
           newPrice: newAmount,
-          title: newTitle,  // Sending title
-          description: newDescription,  // Sending description
+          title: newTitle,
+          description: newDescription,
         },
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       setShowModal(false);
       setRefreshTrigger((prev) => !prev);
@@ -63,11 +80,16 @@ function MessageContainer() {
   };
 
   const handleDealStatusUpdate = async (status) => {
+    if (!token) return console.error("No auth token found");
     try {
       const res = await axios.patch(
-        `http://localhost:5000/api/v1/deal/${deal._id}/status`,
+        `${baseuri}/deal/${deal._id}/status`,
         { status },
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       console.log(`Deal ${status}:`, res.data);
       setRefreshTrigger((prev) => !prev);
@@ -104,7 +126,7 @@ function MessageContainer() {
               <>
                 <div className="flex justify-between items-center text-sm">
                   <p>
-                    <span className="font-medium">Deal Title:</span> 
+                    <span className="font-medium">Deal Title:</span>
                     <span className="text-white"> {deal.title}</span>
                   </p>
                 </div>
@@ -116,11 +138,11 @@ function MessageContainer() {
                 </div>
                 <div className="flex justify-between items-center text-sm mt-2">
                   <p>
-                    <span className="font-medium">Deal Status:</span> 
+                    <span className="font-medium">Deal Status:</span>
                     <span className="text-yellow-400 font-medium"> {deal.status}</span>
                   </p>
                   <p>
-                    <span className="font-medium">Price:</span> 
+                    <span className="font-medium">Price:</span>
                     <span className="text-green-400 font-medium"> ${deal.price}</span>
                   </p>
                 </div>
@@ -131,14 +153,12 @@ function MessageContainer() {
             {deal ? (
               <div className="mt-3">
                 {deal.status === "Pending" && (
-                  <>
-                    <button
-                      className="btn btn-sm btn-accent"
-                      onClick={() => setShowModal(true)}
-                    >
-                      Negotiate
-                    </button>
-                  </>
+                  <button
+                    className="btn btn-sm btn-accent"
+                    onClick={() => setShowModal(true)}
+                  >
+                    Negotiate
+                  </button>
                 )}
               </div>
             ) : (
@@ -184,7 +204,7 @@ function MessageContainer() {
               </div>
             )}
 
-            {/* Congratulation message */}
+            {/* Congratulations message */}
             {deal?.status === "Completed" && (
               <div className="mt-4 text-green-400 font-semibold">
                 🎉 Congratulations on making the deal!

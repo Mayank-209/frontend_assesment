@@ -6,22 +6,46 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setAuthUser, setOtherUsers } from "../redux/userSlice";
+
 function SideBar() {
+  const baseuri = process.env.REACT_APP_BASE_URL;
   const [search, setSearch] = useState("");
   const { otherUsers } = useSelector((store) => store.user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
   const logoutHandler = async () => {
     try {
-      const res = await axios.post("http://localhost:5000/api/v1/user/logout");
-      navigate("/login");
-      toast.success(res.data.message);
+      // Send logout request to backend
+      const res = await axios.post(
+        `${baseuri}/user/logout`,
+        {},
+        {
+          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      // Remove token from localStorage
+      localStorage.removeItem("token");
+
+      // Clear Redux state
       dispatch(setAuthUser(null));
       dispatch(setOtherUsers(null));
+
+      // Navigate to login
+      navigate("/login");
+
+      // Success toast
+      toast.success(res.data.message);
     } catch (error) {
       console.log(error);
+      toast.error("Logout failed");
     }
   };
+
   const searchSubmitHandler = (e) => {
     e.preventDefault();
     const otherUser = otherUsers?.find((user) =>
@@ -33,11 +57,11 @@ function SideBar() {
       toast.error("User not found");
     }
   };
+
   return (
     <div className="border-r border-slate-500 p-4 flex flex-col">
       <form
         onSubmit={searchSubmitHandler}
-        action=""
         className="flex items-center gap-2"
       >
         <input
@@ -54,7 +78,7 @@ function SideBar() {
       <div className="divider px-3"></div>
       <OtherUsers />
       <div className="mt-2">
-        <button onClick={logoutHandler} className="btn btn-sm">
+        <button onClick={logoutHandler} className="btn btn-sm btn-error text-white">
           Logout
         </button>
       </div>

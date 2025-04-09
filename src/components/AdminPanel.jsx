@@ -25,6 +25,7 @@ ChartJS.register(
 );
 
 const AdminPanel = () => {
+  const baseuri = process.env.REACT_APP_BASE_URL;
   const [dealStats, setDealStats] = useState(null);
   const [userEngagement, setUserEngagement] = useState(null);
   const [topUsers, setTopUsers] = useState(null);
@@ -32,16 +33,21 @@ const AdminPanel = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        const authUser = JSON.parse(localStorage.getItem("authUser"));
+        const token = authUser?.token;
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        };
+
         const [dealRes, engagementRes, topUsersRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/v1/admin/dealstats", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:5000/api/v1/admin/userengagement", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:5000/api/v1/admin/topusers", {
-            withCredentials: true,
-          }),
+          axios.get(`${baseuri}/admin/dealstats`, config),
+          axios.get(`${baseuri}/admin/userengagement`, config),
+          axios.get(`${baseuri}/admin/topusers`, config),
         ]);
 
         setDealStats(dealRes.data);

@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import { setCurrentDeal } from "../redux/dealSlice";
 
 const useFetchDealBetweenUsers = (authUserId, selectedUserId, triggerRefresh) => {
+  const baseuri = process.env.REACT_APP_BASE_URL;
   const dispatch = useDispatch();
   const [deal, setDeal] = useState(null);
 
@@ -12,10 +13,16 @@ const useFetchDealBetweenUsers = (authUserId, selectedUserId, triggerRefresh) =>
       if (!authUserId || !selectedUserId) return;
 
       try {
-        const res = await axios.get(
-          `http://localhost:5000/api/v1/deal/user/${selectedUserId}`,
-          { withCredentials: true }
-        );
+        const token = localStorage.getItem("token");
+
+        const res = await axios.get(`${baseuri}/deal/user/${selectedUserId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        });
+
         dispatch(setCurrentDeal(res.data));
         setDeal(res.data);
       } catch (err) {
@@ -26,7 +33,7 @@ const useFetchDealBetweenUsers = (authUserId, selectedUserId, triggerRefresh) =>
     };
 
     fetchDeal();
-  }, [authUserId, selectedUserId, triggerRefresh, dispatch]);
+  }, [authUserId, selectedUserId, triggerRefresh, dispatch, baseuri]);
 
   return deal;
 };

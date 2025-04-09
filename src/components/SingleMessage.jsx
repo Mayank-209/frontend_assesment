@@ -11,14 +11,15 @@ function SingleMessage({ message }) {
   }, [message]);
 
   // Determine which user's profile picture to use
-  const senderProfilePic = message?.senderId === authUser?._id ? authUser?.profilePic : selectedUser?.profilePic
+  const senderProfilePic = message?.senderId === authUser?.user?._id ? authUser?.user?.profilePic : selectedUser?.profilePic
+  
   
   
   return (
     <div
       ref={scroll}
       className={`chat ${
-        authUser?._id === message?.senderId ? "chat-end" : "chat-start"
+        authUser?.user?._id === message?.senderId ? "chat-end" : "chat-start"
       }`}
     >
       <div className="chat-image avatar">

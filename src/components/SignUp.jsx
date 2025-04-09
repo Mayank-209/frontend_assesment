@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 
 function SignUp() {
+  const baseuri=process.env.REACT_APP_BASE_URL
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -33,7 +34,7 @@ function SignUp() {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/v1/user/register",
+        `${baseuri}/user/register`,
         user,
         {
           headers: {
@@ -42,10 +43,7 @@ function SignUp() {
           withCredentials: true
         }
       );
-      console.log('====================================');
-      console.log(res);
-      console.log('====================================');
-
+      
       if (res.data.success) {
         navigate("/login");
         toast.success(res.data.message);

@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { setMessages } from "../redux/messageSlice";
 
 const FileUploadButton = () => {
+  const baseuri = process.env.REACT_APP_BASE_URL;
   const [loading, setLoading] = useState(false);
   const { selectedUser } = useSelector((store) => store.user);
   const { currentDeal } = useSelector((store) => store.deal);
@@ -13,47 +14,55 @@ const FileUploadButton = () => {
 
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
-    if (!file || !currentDeal?._id) return;
+    console.log("📁 Selected file:", file);
+    if (!file || !currentDeal?._id){ 
+      console.warn("❌ File or currentDeal ID is missing");
+      return
+    };
+
+    const token = localStorage.getItem("token")
+    if (!token) return console.error("No auth token found");
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
       setLoading(true);
-
+      console.log("⬆️ Uploading to:", `${baseuri}/document/upload/${currentDeal._id}`);
       const res = await axios.post(
-        `http://localhost:5000/api/v1/document/upload/${currentDeal._id}`,
+        `${baseuri}/document/upload/${currentDeal._id}`,
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
           },
-          withCredentials: true,
         }
       );
-      console.log("Upload response:", res.data);
+
+      console.log("✅ Cloudinary upload success:", res.data);
       const savedDoc = res.data.document;
-      console.log("Saved doc:", savedDoc);
+
       const docMessage = {
         content: savedDoc.fileUrl,
         type: "document",
         fileType: savedDoc.fileType,
         dealId: currentDeal._id,
       };
+      console.log("📨 Sending document message payload:", docMessage);
 
-      // Send this as a normal message
       const messageRes = await axios.post(
-        `http://localhost:5000/api/v1/message/send/${selectedUser?._id}`,
+        `${baseuri}/message/send/${selectedUser?._id}`,
         docMessage,
         {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
-          withCredentials: true,
         }
       );
-      console.log("testing",messageRes);
-      
+
+      console.log("✅ Message sent successfully:", messageRes?.data);
       dispatch(setMessages([...messages, messageRes.data.newMessage]));
     } catch (err) {
       console.error("Upload failed", err);
