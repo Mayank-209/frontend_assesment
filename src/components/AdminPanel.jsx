@@ -12,6 +12,10 @@ import {
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Doughnut, Bar } from "react-chartjs-2";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { setAuthUser, setOtherUsers } from "../redux/userSlice";
 
 ChartJS.register(
   ArcElement,
@@ -25,23 +29,51 @@ ChartJS.register(
 );
 
 const AdminPanel = () => {
-  const baseuri = process.env.REACT_APP_BASE_URL;
+  
   const [dealStats, setDealStats] = useState(null);
   const [userEngagement, setUserEngagement] = useState(null);
   const [topUsers, setTopUsers] = useState(null);
 
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  
+  const logoutHandler = async () => {
+    try {
+      const baseuri = process.env.REACT_APP_BASE_URL;
+      const token = localStorage.getItem("token");
+      await axios.post(
+        `${baseuri}/user/logout`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      localStorage.removeItem("token");
+      dispatch(setAuthUser(null));
+      dispatch(setOtherUsers(null));
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Logout failed");
+    }
+  };
+  
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const authUser = JSON.parse(localStorage.getItem("authUser"));
-        const token = authUser?.token;
-
+        const baseuri = process.env.REACT_APP_BASE_URL;
+        const token = localStorage.getItem("token");
+        console.log("token",token);
+        
         const config = {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          withCredentials: true,
         };
 
         const [dealRes, engagementRes, topUsersRes] = await Promise.all([
@@ -118,7 +150,17 @@ const AdminPanel = () => {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto relative">
+      {/* Logout Button */}
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={logoutHandler}
+          className="btn btn-sm btn-error text-white"
+        >
+          Logout
+        </button>
+      </div>
+
       <h2 className="text-3xl font-bold mb-4">Admin Dashboard</h2>
 
       <div className="grid md:grid-cols-2 gap-6">
